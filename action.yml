@@ -1,0 +1,28 @@
+name: "RepoCare repository health"
+description: "Scan open-source repository health and generate an actionable Markdown report."
+author: "RepoCare contributors"
+branding:
+  icon: "heart"
+  color: "green"
+inputs:
+  path:
+    description: "Repository path to scan"
+    required: false
+    default: "."
+  output:
+    description: "Markdown report path"
+    required: false
+    default: "repocare-report.md"
+  fail-under:
+    description: "Fail when the score is lower than this value"
+    required: false
+    default: "0"
+runs:
+  using: "composite"
+  steps:
+    - name: Run RepoCare
+      shell: bash
+      run: >-
+        node "$GITHUB_ACTION_PATH/dist/src/cli.js" scan "${{ inputs.path }}"
+        --format markdown --output "${{ inputs.output }}"
+        --fail-under "${{ inputs.fail-under }}"

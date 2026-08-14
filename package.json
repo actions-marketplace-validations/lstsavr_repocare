@@ -1,0 +1,41 @@
+{
+  "name": "repocare",
+  "version": "0.1.0",
+  "description": "A local-first repository health scanner for open-source maintainers.",
+  "type": "module",
+  "bin": {
+    "repocare": "dist/src/cli.js"
+  },
+  "files": [
+    "dist/src",
+    "action.yml",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "check": "tsc -p tsconfig.json --noEmit",
+    "test": "npm run build && node --test --experimental-test-isolation=none dist/tests/*.test.js",
+    "scan:self": "npm run build && node dist/src/cli.js scan . --format markdown",
+    "prepack": "npm test"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/lstsavr/repocare.git"
+  },
+  "keywords": [
+    "repository",
+    "open-source",
+    "maintainer",
+    "health-check",
+    "github-action"
+  ],
+  "license": "MIT",
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "typescript": "^5.8.0"
+  }
+}

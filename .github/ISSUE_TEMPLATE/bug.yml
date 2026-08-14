@@ -1,0 +1,31 @@
+name: Bug report
+description: Report a reproducible problem in RepoCare.
+title: "[Bug]: "
+labels: [bug]
+body:
+  - type: textarea
+    id: description
+    attributes:
+      label: What happened?
+      description: Include the command, actual result, and expected result.
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: RepoCare version
+      placeholder: 0.1.0
+    validations:
+      required: true
+  - type: input
+    id: node
+    attributes:
+      label: Node.js version and operating system
+    validations:
+      required: true
+  - type: textarea
+    id: repository
+    attributes:
+      label: Minimal repository structure or public reproduction
+    validations:
+      required: true

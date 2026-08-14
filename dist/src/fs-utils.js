@@ -1,0 +1,59 @@
+import { access, readFile, readdir, stat } from "node:fs/promises";
+import path from "node:path";
+export async function exists(target) {
+    try {
+        await access(target);
+        return true;
+    }
+    catch {
+        return false;
+    }
+}
+export async function isDirectory(target) {
+    try {
+        return (await stat(target)).isDirectory();
+    }
+    catch {
+        return false;
+    }
+}
+export async function firstExisting(root, candidates) {
+    for (const candidate of candidates) {
+        if (await exists(path.join(root, candidate)))
+            return candidate;
+    }
+    return undefined;
+}
+export async function readText(root, relativePath) {
+    try {
+        return await readFile(path.join(root, relativePath), "utf8");
+    }
+    catch {
+        return undefined;
+    }
+}
+export async function listFiles(root, relativeDirectory) {
+    const directory = path.join(root, relativeDirectory);
+    if (!(await isDirectory(directory)))
+        return [];
+    try {
+        const entries = await readdir(directory, { withFileTypes: true });
+        return entries
+            .filter((entry) => entry.isFile())
+            .map((entry) => `${relativeDirectory.replace(/\\/g, "/").replace(/\/$/, "")}/${entry.name}`);
+    }
+    catch {
+        return [];
+    }
+}
+export async function findTestEvidence(root) {
+    const directories = ["test", "tests", "__tests__", "spec"];
+    for (const directory of directories) {
+        if (await isDirectory(path.join(root, directory)))
+            return `${directory}/`;
+    }
+    const entries = await readdir(root, { withFileTypes: true });
+    const match = entries.find((entry) => entry.isFile() && /(?:\.test|\.spec)\.(?:[cm]?[jt]sx?|py|rb|go)$/i.test(entry.name));
+    return match?.name;
+}
+//# sourceMappingURL=fs-utils.js.map

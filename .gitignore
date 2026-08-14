@@ -1,0 +1,9 @@
+node_modules/
+*.log
+.env
+.env.*
+!.env.example
+coverage/
+repocare-report.md
+.DS_Store
+Thumbs.db
