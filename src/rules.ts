@@ -45,7 +45,7 @@ const rules: RuleDefinition[] = [
       const readme = await firstExisting(root, ["README.md", "README.rst", "README.txt", "README"]);
       if (!readme) return result("fail", 0, "Not found", "Add a README with installation and usage instructions.");
       const text = (await readText(root, readme)) ?? "";
-      const hasInstall = /(?:^|\n)#{1,4}\s+(?:install|installation|getting started)/i.test(text);
+      const hasInstall = /(?:^|\n)#{1,4}\s+(?:install|installation|getting started|quick start)/i.test(text);
       const hasUsage = /(?:^|\n)#{1,4}\s+(?:usage|quickstart|examples?)/i.test(text);
       if (hasInstall && hasUsage) return result("pass", 12, `${readme} includes installation and usage guidance`);
       return result("warn", 6, readme, "Add clearly labeled installation and usage sections.");

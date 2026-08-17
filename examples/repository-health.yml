@@ -1,0 +1,26 @@
+name: Repository health
+
+on:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  repocare:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - name: Scan repository health
+        id: repocare
+        uses: lstsavr/repocare@v0.1.0
+        with:
+          fail-under: 80
+      - name: Upload report
+        if: always()
+        uses: actions/upload-artifact@v6
+        with:
+          name: repocare-report
+          path: ${{ steps.repocare.outputs.report }}
+

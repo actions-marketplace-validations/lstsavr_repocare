@@ -32,6 +32,15 @@ test("an empty repository receives a low score with actionable failures", async 
   assert.ok(report.rules.some((rule) => rule.id === "readme" && rule.status === "fail"));
 });
 
+test("recognizes a quick-start section as installation guidance", async () => {
+  const root = await temporaryRepository();
+  await put(root, "README.md", "# Demo\n\n## Quick start\n\nRun with npx.\n\n## Usage\n\nScan a repository.\n");
+  const report = await scanRepository(root);
+  const readme = report.rules.find((rule) => rule.id === "readme");
+  assert.equal(readme?.status, "pass");
+  assert.equal(readme?.earned, 12);
+});
+
 test("a well-maintained repository receives an A", async () => {
   const root = await temporaryRepository();
   await Promise.all([

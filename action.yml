@@ -13,16 +13,46 @@ inputs:
     description: "Markdown report path"
     required: false
     default: "repocare-report.md"
+  format:
+    description: "Report format: text, markdown, or json"
+    required: false
+    default: "markdown"
   fail-under:
     description: "Fail when the score is lower than this value"
     required: false
     default: "0"
+  job-summary:
+    description: "Add Markdown reports to the GitHub Actions job summary"
+    required: false
+    default: "true"
+outputs:
+  report:
+    description: "Path to the generated report"
+    value: ${{ steps.scan.outputs.report }}
 runs:
   using: "composite"
   steps:
     - name: Run RepoCare
+      id: scan
       shell: bash
-      run: >-
-        node "$GITHUB_ACTION_PATH/dist/src/cli.js" scan "${{ inputs.path }}"
-        --format markdown --output "${{ inputs.output }}"
-        --fail-under "${{ inputs.fail-under }}"
+      env:
+        REPOCARE_PATH: ${{ inputs.path }}
+        REPOCARE_OUTPUT: ${{ inputs.output }}
+        REPOCARE_FORMAT: ${{ inputs.format }}
+        REPOCARE_FAIL_UNDER: ${{ inputs.fail-under }}
+        REPOCARE_JOB_SUMMARY: ${{ inputs.job-summary }}
+      run: |
+        set +e
+        node "$GITHUB_ACTION_PATH/dist/src/cli.js" scan "$REPOCARE_PATH" \
+          --format "$REPOCARE_FORMAT" \
+          --output "$REPOCARE_OUTPUT" \
+          --fail-under "$REPOCARE_FAIL_UNDER"
+        status=$?
+        set -e
+
+        printf 'report=%s\n' "$REPOCARE_OUTPUT" >> "$GITHUB_OUTPUT"
+        if [[ "$REPOCARE_JOB_SUMMARY" == "true" && "$REPOCARE_FORMAT" == "markdown" && -f "$REPOCARE_OUTPUT" ]]; then
+          cat "$REPOCARE_OUTPUT" >> "$GITHUB_STEP_SUMMARY"
+        fi
+
+        exit "$status"

@@ -1,5 +1,6 @@
 #!/usr/bin/env node
-import { writeFile } from "node:fs/promises";
+import { mkdir, writeFile } from "node:fs/promises";
+import path from "node:path";
 import { pathToFileURL } from "node:url";
 import { scanRepository, VERSION } from "./scanner.js";
 import { renderReport, type OutputFormat } from "./reporters.js";
@@ -82,7 +83,9 @@ export async function run(args = process.argv.slice(2)): Promise<number> {
     const report = await scanRepository(parsed.target);
     const output = renderReport(report, parsed.format);
     if (parsed.output) {
-      await writeFile(parsed.output, output, "utf8");
+      const outputPath = path.resolve(parsed.output);
+      await mkdir(path.dirname(outputPath), { recursive: true });
+      await writeFile(outputPath, output, "utf8");
       process.stdout.write(`RepoCare report written to ${parsed.output} (${report.score}/100)\n`);
     } else {
       process.stdout.write(output);

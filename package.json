@@ -8,6 +8,8 @@
   },
   "files": [
     "dist/src",
+    "docs",
+    "examples",
     "action.yml",
     "README.md",
     "LICENSE"
@@ -26,12 +28,19 @@
     "type": "git",
     "url": "git+https://github.com/lstsavr/repocare.git"
   },
+  "homepage": "https://github.com/lstsavr/repocare#readme",
+  "bugs": {
+    "url": "https://github.com/lstsavr/repocare/issues"
+  },
+  "author": "lstsavr and RepoCare contributors",
   "keywords": [
     "repository",
     "open-source",
     "maintainer",
     "health-check",
-    "github-action"
+    "github-action",
+    "repository-audit",
+    "developer-tools"
   ],
   "license": "MIT",
   "devDependencies": {
