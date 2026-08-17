@@ -1,0 +1,25 @@
+name: Repository health (SARIF)
+
+on:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  security-events: write
+
+jobs:
+  repocare:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - name: Generate RepoCare SARIF
+        uses: lstsavr/repocare@v0.2.0
+        with:
+          format: sarif
+          output: repocare.sarif
+      - name: Upload SARIF
+        uses: github/codeql-action/upload-sarif@v4
+        with:
+          sarif_file: repocare.sarif
+

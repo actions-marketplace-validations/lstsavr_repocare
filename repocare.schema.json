@@ -1,0 +1,38 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/lstsavr/repocare/main/repocare.schema.json",
+  "title": "RepoCare configuration",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "$schema": { "type": "string" },
+    "ignore": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {
+        "enum": [
+          "readme",
+          "license",
+          "contributing",
+          "security",
+          "code_of_conduct",
+          "changelog",
+          "issue_templates",
+          "pull_request_template",
+          "continuous_integration",
+          "tests",
+          "dependency_updates",
+          "release_automation",
+          "gitignore",
+          "editorconfig",
+          "package_metadata"
+        ]
+      }
+    },
+    "failUnder": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 100
+    }
+  }
+}

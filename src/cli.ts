@@ -2,6 +2,7 @@
 import { mkdir, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { pathToFileURL } from "node:url";
+import { loadConfig } from "./config.js";
 import { scanRepository, VERSION } from "./scanner.js";
 import { renderReport, type OutputFormat } from "./reporters.js";
 
@@ -10,6 +11,7 @@ interface CliOptions {
   format: OutputFormat;
   output?: string;
   failUnder?: number;
+  config?: string;
 }
 
 const HELP = `RepoCare ${VERSION} - repository health checks for open-source maintainers
@@ -20,9 +22,10 @@ Usage:
   repocare --version
 
 Options:
-  --format <text|markdown|json>  Report format (default: text)
+  --format <text|markdown|json|sarif>  Report format (default: text)
   --output <file>                Write the report to a file
   --fail-under <0-100>           Exit with code 2 when the score is lower
+  --config <file>                Use a config file (default: <path>/.repocare.json)
   -h, --help                     Show help
   -v, --version                  Show version
 `;
@@ -44,7 +47,7 @@ export function parseArguments(args: string[]): CliOptions | "help" | "version" 
     const argument = args[index];
     if (argument === "--format") {
       const value = requireValue(args, index, argument);
-      if (!(["text", "markdown", "json"] as string[]).includes(value)) throw new Error(`Unsupported format: ${value}`);
+      if (!(["text", "markdown", "json", "sarif"] as string[]).includes(value)) throw new Error(`Unsupported format: ${value}`);
       options.format = value as OutputFormat;
       index += 1;
     } else if (argument === "--output") {
@@ -55,6 +58,9 @@ export function parseArguments(args: string[]): CliOptions | "help" | "version" 
       const threshold = Number(raw);
       if (!Number.isInteger(threshold) || threshold < 0 || threshold > 100) throw new Error("--fail-under must be an integer from 0 to 100");
       options.failUnder = threshold;
+      index += 1;
+    } else if (argument === "--config") {
+      options.config = requireValue(args, index, argument);
       index += 1;
     } else if (argument.startsWith("-")) {
       throw new Error(`Unknown option: ${argument}`);
@@ -80,7 +86,8 @@ export async function run(args = process.argv.slice(2)): Promise<number> {
       return 0;
     }
 
-    const report = await scanRepository(parsed.target);
+    const config = await loadConfig(parsed.target, parsed.config);
+    const report = await scanRepository(parsed.target, { ignoreRules: config.ignore });
     const output = renderReport(report, parsed.format);
     if (parsed.output) {
       const outputPath = path.resolve(parsed.output);
@@ -90,7 +97,8 @@ export async function run(args = process.argv.slice(2)): Promise<number> {
     } else {
       process.stdout.write(output);
     }
-    return parsed.failUnder !== undefined && report.score < parsed.failUnder ? 2 : 0;
+    const failUnder = parsed.failUnder ?? config.failUnder;
+    return failUnder !== undefined && report.score < failUnder ? 2 : 0;
   } catch (error) {
     process.stderr.write(`repocare: ${error instanceof Error ? error.message : String(error)}\n`);
     return 1;

@@ -1,6 +1,6 @@
 {
   "name": "repocare",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "A local-first repository health scanner for open-source maintainers.",
   "type": "module",
   "bin": {
@@ -10,6 +10,7 @@
     "dist/src",
     "docs",
     "examples",
+    "repocare.schema.json",
     "action.yml",
     "README.md",
     "LICENSE"
@@ -28,7 +29,7 @@
     "type": "git",
     "url": "git+https://github.com/lstsavr/repocare.git"
   },
-  "homepage": "https://github.com/lstsavr/repocare#readme",
+  "homepage": "https://www.npmjs.com/package/repocare",
   "bugs": {
     "url": "https://github.com/lstsavr/repocare/issues"
   },

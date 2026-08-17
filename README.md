@@ -8,7 +8,7 @@
 RepoCare is a fast, local-first repository health scanner for open-source maintainers. It turns common maintenance gaps into a transparent 100-point report without uploading source code, requiring an API key, or installing runtime dependencies.
 
 ```text
-RepoCare 0.1.0
+RepoCare 0.2.0
 Health score: 86/100 (B)
 Checks: 12 passed, 2 warnings, 1 failed
 
@@ -55,9 +55,10 @@ Usage:
   repocare --version
 
 Options:
-  --format <text|markdown|json>  Report format (default: text)
+  --format <text|markdown|json|sarif>  Report format (default: text)
   --output <file>                Write the report to a file
   --fail-under <0-100>           Exit with code 2 when the score is lower
+  --config <file>                Use a config file (default: <path>/.repocare.json)
 ```
 
 Write a Markdown report, creating parent directories when necessary:
@@ -71,6 +72,30 @@ Produce machine-readable JSON and enforce a minimum score:
 ```bash
 repocare scan . --format json --output repocare.json --fail-under 80
 ```
+
+### Configuration
+
+Add `.repocare.json` to define a project policy:
+
+```json
+{
+  "$schema": "https://raw.githubusercontent.com/lstsavr/repocare/main/repocare.schema.json",
+  "ignore": ["code_of_conduct"],
+  "failUnder": 80
+}
+```
+
+RepoCare validates option names and rule IDs so configuration typos fail visibly. CLI `--fail-under` takes precedence over the configured value. Ignored rules are listed in schema-version-2 reports and the score is normalized over active rules.
+
+### SARIF
+
+Generate a SARIF 2.1.0 report for GitHub Code Scanning or another compatible consumer:
+
+```bash
+repocare scan . --format sarif --output repocare.sarif
+```
+
+See the [Code Scanning workflow](examples/code-scanning.yml) for a complete integration.
 
 Exit codes are:
 
@@ -101,7 +126,7 @@ jobs:
       - uses: actions/checkout@v7
       - name: Scan repository health
         id: repocare
-        uses: lstsavr/repocare@v0.1.0
+        uses: lstsavr/repocare@v0.2.0
         with:
           fail-under: 80
       - name: Upload report
@@ -120,13 +145,14 @@ Action inputs:
 | --- | --- | --- |
 | `path` | `.` | Repository path to scan |
 | `output` | `repocare-report.md` | Generated report path |
-| `format` | `markdown` | `text`, `markdown`, or `json` |
-| `fail-under` | `0` | Minimum accepted score |
+| `format` | `markdown` | `text`, `markdown`, `json`, or `sarif` |
+| `fail-under` | empty | Optional minimum score; overrides the config file |
 | `job-summary` | `true` | Add Markdown output to the Actions job summary |
+| `config` | empty | Optional RepoCare config file path |
 
 ## What it checks
 
-RepoCare 0.1 evaluates fifteen signals totaling 100 points:
+RepoCare 0.2 evaluates fifteen signals totaling 100 points:
 
 - README installation and usage guidance
 - Open-source license
@@ -137,7 +163,7 @@ RepoCare 0.1 evaluates fifteen signals totaling 100 points:
 - Dependency update and release automation
 - `.gitignore`, `.editorconfig`, and ecosystem metadata
 
-The complete evidence rules and weights are documented in [docs/rules.md](docs/rules.md). Reports use schema version `1` for machine-readable integrations.
+The complete evidence rules, weights, and configuration behavior are documented in [docs/rules.md](docs/rules.md). Reports use schema version `2` for machine-readable integrations.
 
 ## Privacy and limitations
 
@@ -157,9 +183,8 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for design principles and contribution gu
 
 ## Roadmap
 
-- Configurable rules and ignored checks
 - Monorepo and additional ecosystem awareness
-- SARIF and GitHub Job Summary enhancements
+- GitHub annotations and richer SARIF locations
 - Historical score tracking
 - Optional maintainer automation adapters with explicit data controls
 

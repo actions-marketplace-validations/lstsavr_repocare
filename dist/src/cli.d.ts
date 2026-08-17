@@ -5,6 +5,7 @@ interface CliOptions {
     format: OutputFormat;
     output?: string;
     failUnder?: number;
+    config?: string;
 }
 export declare function parseArguments(args: string[]): CliOptions | "help" | "version";
 export declare function run(args?: string[]): Promise<number>;

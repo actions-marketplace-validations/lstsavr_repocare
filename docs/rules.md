@@ -30,3 +30,16 @@ Grades are A (90–100), B (80–89), C (70–79), D (60–69), and F (below 60)
 
 RepoCare deliberately checks repository evidence rather than claiming to measure code quality, security, maintainer responsiveness, or community health. Treat the score as a practical checklist, not a certification.
 
+## Configuration
+
+Create `.repocare.json` in the scanned repository root:
+
+```json
+{
+  "$schema": "https://raw.githubusercontent.com/lstsavr/repocare/main/repocare.schema.json",
+  "ignore": ["code_of_conduct"],
+  "failUnder": 80
+}
+```
+
+Ignored rules are removed from the active rule set and the score is normalized over the remaining weights. RepoCare rejects unknown rule IDs and configurations that ignore every rule. A CLI `--fail-under` value overrides the configured threshold.

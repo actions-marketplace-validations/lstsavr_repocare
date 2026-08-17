@@ -9,7 +9,7 @@ export interface RuleResult {
     recommendation?: string;
 }
 export interface ScanReport {
-    schemaVersion: 1;
+    schemaVersion: 2;
     toolVersion: string;
     repository: string;
     scannedAt: string;
@@ -21,9 +21,11 @@ export interface ScanReport {
         failed: number;
         total: number;
     };
+    ignoredRules: string[];
     rules: RuleResult[];
 }
 export interface ScanOptions {
     now?: Date;
+    ignoreRules?: string[];
 }
 //# sourceMappingURL=types.d.ts.map

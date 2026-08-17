@@ -1,5 +1,5 @@
 import path from "node:path";
-import { exists, findTestEvidence, firstExisting, listFiles, readText } from "./fs-utils.js";
+import { findTestEvidence, firstExisting, listFiles, readText } from "./fs-utils.js";
 import type { RuleResult, RuleStatus } from "./types.js";
 
 interface RuleDefinition {
@@ -85,7 +85,9 @@ const rules: RuleDefinition[] = [
     title: "Issue templates",
     weight: 7,
     async evaluate(root) {
-      const files = await listFiles(root, ".github/ISSUE_TEMPLATE");
+      const files = (await listFiles(root, ".github/ISSUE_TEMPLATE")).filter(
+        (file) => !/(?:^|\/)config\.ya?ml$/i.test(file) && /\.(?:md|ya?ml)$/i.test(file),
+      );
       return files.length > 0
         ? result("pass", 7, files.join(", "))
         : result("fail", 0, "Not found", "Add bug report and feature request issue templates.");
@@ -106,9 +108,15 @@ const rules: RuleDefinition[] = [
       const files = await listFiles(root, ".github/workflows");
       const candidates = files.filter((file) => /\.(?:yml|yaml)$/i.test(file));
       for (const file of candidates) {
-        const text = (await readText(root, file)) ?? "";
-        const runsForChanges = /pull_request\s*:|push\s*:|\bon\s*:\s*\[[^\]]*(?:push|pull_request)/i.test(text);
-        if (runsForChanges && /(?:test|check|build)/i.test(text)) {
+        const text = ((await readText(root, file)) ?? "")
+          .split(/\r?\n/)
+          .filter((line) => !/^\s*#/.test(line))
+          .join("\n");
+        const runsForChanges = /^\s*(?:push|pull_request)\s*:/im.test(text)
+          || /^\s*on\s*:\s*\[[^\]]*(?:push|pull_request)/im.test(text);
+        const validatesChanges = /^\s*(?:run|uses)\s*:[^\n]*(?:test|check|build|lint|pytest|cargo\s+test|go\s+test)/im.test(text)
+          || /^\s{2,}(?:test|check|build|lint)[\w-]*\s*:/im.test(text);
+        if (runsForChanges && validatesChanges) {
           return result("pass", 10, file);
         }
       }
@@ -143,7 +151,15 @@ const rules: RuleDefinition[] = [
     weight: 5,
     async evaluate(root) {
       const files = await listFiles(root, ".github/workflows");
-      const found = files.find((file) => /(?:release|publish)/i.test(path.basename(file)));
+      let found: string | undefined;
+      for (const file of files.filter((candidate) => /\.ya?ml$/i.test(candidate))) {
+        if (!/(?:release|publish)/i.test(path.basename(file))) continue;
+        const text = (await readText(root, file)) ?? "";
+        if (/(?:npm\s+publish|action-gh-release|gh\s+release|create-release|release\s*:)/i.test(text)) {
+          found = file;
+          break;
+        }
+      }
       return found
         ? result("pass", 5, found)
         : result("fail", 0, "Not found", "Add a repeatable release or package publishing workflow.");
@@ -171,9 +187,12 @@ const rules: RuleDefinition[] = [
   },
 ];
 
-export async function evaluateRules(root: string): Promise<RuleResult[]> {
+export const ruleIds = rules.map((rule) => rule.id);
+
+export async function evaluateRules(root: string, ignoredRules: string[] = []): Promise<RuleResult[]> {
+  const ignored = new Set(ignoredRules);
   return Promise.all(
-    rules.map(async (rule) => ({
+    rules.filter((rule) => !ignored.has(rule.id)).map(async (rule) => ({
       id: rule.id,
       title: rule.title,
       weight: rule.weight,
@@ -181,5 +200,3 @@ export async function evaluateRules(root: string): Promise<RuleResult[]> {
     })),
   );
 }
-
-export const totalRuleWeight = rules.reduce((total, rule) => total + rule.weight, 0);

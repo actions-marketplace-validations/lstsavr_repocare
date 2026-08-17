@@ -5,10 +5,11 @@ import path from "node:path";
 import { test } from "node:test";
 import { parseArguments, run } from "../src/cli.js";
 test("parses scan options", () => {
-    assert.deepEqual(parseArguments(["scan", "demo", "--format", "json", "--fail-under", "80"]), {
+    assert.deepEqual(parseArguments(["scan", "demo", "--format", "sarif", "--fail-under", "80", "--config", "custom.json"]), {
         target: "demo",
-        format: "json",
+        format: "sarif",
         failUnder: 80,
+        config: "custom.json",
     });
 });
 test("rejects invalid thresholds", () => {
@@ -23,7 +24,7 @@ test("creates parent directories for report output", async () => {
         assert.equal(await run(["scan", root, "--format", "json", "--output", output]), 0);
         const report = JSON.parse(await readFile(output, "utf8"));
         assert.equal(report.repository, root);
-        assert.equal(report.schemaVersion, 1);
+        assert.equal(report.schemaVersion, 2);
     }
     finally {
         process.stdout.write = originalWrite;

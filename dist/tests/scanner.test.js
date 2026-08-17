@@ -21,7 +21,7 @@ afterEach(async () => {
 test("an empty repository receives a low score with actionable failures", async () => {
     const root = await temporaryRepository();
     const report = await scanRepository(root, { now: new Date("2026-01-01T00:00:00.000Z") });
-    assert.equal(report.schemaVersion, 1);
+    assert.equal(report.schemaVersion, 2);
     assert.ok(report.score < 10);
     assert.equal(report.grade, "F");
     assert.ok(report.rules.some((rule) => rule.id === "readme" && rule.status === "fail"));
@@ -34,6 +34,21 @@ test("recognizes a quick-start section as installation guidance", async () => {
     assert.equal(readme?.status, "pass");
     assert.equal(readme?.earned, 12);
 });
+test("does not treat directories or issue config as evidence files", async () => {
+    const root = await temporaryRepository();
+    await mkdir(path.join(root, "LICENSE"));
+    await put(root, ".github/ISSUE_TEMPLATE/config.yml", "blank_issues_enabled: false\n");
+    const report = await scanRepository(root);
+    assert.equal(report.rules.find((rule) => rule.id === "license")?.status, "fail");
+    assert.equal(report.rules.find((rule) => rule.id === "issue_templates")?.status, "fail");
+});
+test("ignores configured rules and normalizes the active score", async () => {
+    const root = await temporaryRepository();
+    const report = await scanRepository(root, { ignoreRules: ["license"] });
+    assert.deepEqual(report.ignoredRules, ["license"]);
+    assert.equal(report.rules.some((rule) => rule.id === "license"), false);
+    assert.equal(report.summary.total, 14);
+});
 test("a well-maintained repository receives an A", async () => {
     const root = await temporaryRepository();
     await Promise.all([
@@ -45,8 +60,8 @@ test("a well-maintained repository receives an A", async () => {
         put(root, "CHANGELOG.md"),
         put(root, ".github/ISSUE_TEMPLATE/bug.yml"),
         put(root, ".github/PULL_REQUEST_TEMPLATE.md"),
-        put(root, ".github/workflows/ci.yml", "on: [push, pull_request]\njobs:\n  test:\n"),
-        put(root, ".github/workflows/release.yml"),
+        put(root, ".github/workflows/ci.yml", "on: [push, pull_request]\njobs:\n  test:\n    steps:\n      - run: npm test\n"),
+        put(root, ".github/workflows/release.yml", "on:\n  push:\n    tags: ['v*']\njobs:\n  publish:\n    steps:\n      - run: npm publish\n"),
         put(root, ".github/dependabot.yml"),
         put(root, "tests/example.test.ts"),
         put(root, ".gitignore"),

@@ -1,9 +1,8 @@
-import { access, readFile, readdir, stat } from "node:fs/promises";
+import { readFile, readdir, stat } from "node:fs/promises";
 import path from "node:path";
-export async function exists(target) {
+export async function isFile(target) {
     try {
-        await access(target);
-        return true;
+        return (await stat(target)).isFile();
     }
     catch {
         return false;
@@ -19,7 +18,7 @@ export async function isDirectory(target) {
 }
 export async function firstExisting(root, candidates) {
     for (const candidate of candidates) {
-        if (await exists(path.join(root, candidate)))
+        if (await isFile(path.join(root, candidate)))
             return candidate;
     }
     return undefined;

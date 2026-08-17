@@ -1,10 +1,9 @@
-import { access, readFile, readdir, stat } from "node:fs/promises";
+import { readFile, readdir, stat } from "node:fs/promises";
 import path from "node:path";
 
-export async function exists(target: string): Promise<boolean> {
+export async function isFile(target: string): Promise<boolean> {
   try {
-    await access(target);
-    return true;
+    return (await stat(target)).isFile();
   } catch {
     return false;
   }
@@ -20,7 +19,7 @@ export async function isDirectory(target: string): Promise<boolean> {
 
 export async function firstExisting(root: string, candidates: string[]): Promise<string | undefined> {
   for (const candidate of candidates) {
-    if (await exists(path.join(root, candidate))) return candidate;
+    if (await isFile(path.join(root, candidate))) return candidate;
   }
   return undefined;
 }

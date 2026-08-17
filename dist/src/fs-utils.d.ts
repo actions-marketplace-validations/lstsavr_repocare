@@ -1,4 +1,4 @@
-export declare function exists(target: string): Promise<boolean>;
+export declare function isFile(target: string): Promise<boolean>;
 export declare function isDirectory(target: string): Promise<boolean>;
 export declare function firstExisting(root: string, candidates: string[]): Promise<string | undefined>;
 export declare function readText(root: string, relativePath: string): Promise<string | undefined>;

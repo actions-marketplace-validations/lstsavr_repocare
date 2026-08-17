@@ -1,5 +1,5 @@
 name: "RepoCare repository health"
-description: "Scan open-source repository health and generate an actionable Markdown report."
+description: "Scan open-source repository health and generate an actionable report."
 author: "RepoCare contributors"
 branding:
   icon: "heart"
@@ -10,21 +10,25 @@ inputs:
     required: false
     default: "."
   output:
-    description: "Markdown report path"
+    description: "Report path"
     required: false
     default: "repocare-report.md"
   format:
-    description: "Report format: text, markdown, or json"
+    description: "Report format: text, markdown, json, or sarif"
     required: false
     default: "markdown"
   fail-under:
-    description: "Fail when the score is lower than this value"
+    description: "Optional score threshold; overrides the config file"
     required: false
-    default: "0"
+    default: ""
   job-summary:
     description: "Add Markdown reports to the GitHub Actions job summary"
     required: false
     default: "true"
+  config:
+    description: "Optional RepoCare config file path"
+    required: false
+    default: ""
 outputs:
   report:
     description: "Path to the generated report"
@@ -41,12 +45,17 @@ runs:
         REPOCARE_FORMAT: ${{ inputs.format }}
         REPOCARE_FAIL_UNDER: ${{ inputs.fail-under }}
         REPOCARE_JOB_SUMMARY: ${{ inputs.job-summary }}
+        REPOCARE_CONFIG: ${{ inputs.config }}
       run: |
         set +e
-        node "$GITHUB_ACTION_PATH/dist/src/cli.js" scan "$REPOCARE_PATH" \
-          --format "$REPOCARE_FORMAT" \
-          --output "$REPOCARE_OUTPUT" \
-          --fail-under "$REPOCARE_FAIL_UNDER"
+        args=(scan "$REPOCARE_PATH" --format "$REPOCARE_FORMAT" --output "$REPOCARE_OUTPUT")
+        if [[ -n "$REPOCARE_FAIL_UNDER" ]]; then
+          args+=(--fail-under "$REPOCARE_FAIL_UNDER")
+        fi
+        if [[ -n "$REPOCARE_CONFIG" ]]; then
+          args+=(--config "$REPOCARE_CONFIG")
+        fi
+        node "$GITHUB_ACTION_PATH/dist/src/cli.js" "${args[@]}"
         status=$?
         set -e
 

@@ -1,6 +1,6 @@
 import type { RuleResult, ScanReport } from "./types.js";
 
-export type OutputFormat = "text" | "markdown" | "json";
+export type OutputFormat = "text" | "markdown" | "json" | "sarif";
 
 const statusIcon: Record<RuleResult["status"], string> = {
   pass: "PASS",
@@ -20,6 +20,7 @@ export function renderText(report: ScanReport): string {
     `Checks: ${report.summary.passed} passed, ${report.summary.warned} warnings, ${report.summary.failed} failed`,
     "",
   ];
+  if (report.ignoredRules.length > 0) lines.splice(4, 0, `Ignored rules: ${report.ignoredRules.join(", ")}`);
   for (const rule of report.rules) {
     lines.push(`[${statusIcon[rule.status]}] ${rule.title} (${rule.earned}/${rule.weight}) - ${rule.evidence}`);
     if (rule.recommendation) lines.push(`       Next: ${rule.recommendation}`);
@@ -39,6 +40,7 @@ export function renderMarkdown(report: ScanReport): string {
     "| Status | Check | Score | Evidence |",
     "| --- | --- | ---: | --- |",
   ];
+  if (report.ignoredRules.length > 0) lines.splice(7, 0, `Ignored rules: ${report.ignoredRules.map((id) => `\`${id}\``).join(", ")}`, "");
   for (const rule of report.rules) {
     const evidence = rule.recommendation ? `${rule.evidence}. **Next:** ${rule.recommendation}` : rule.evidence;
     lines.push(`| ${statusIcon[rule.status]} | ${cleanCell(rule.title)} | ${rule.earned}/${rule.weight} | ${cleanCell(evidence)} |`);
@@ -47,8 +49,35 @@ export function renderMarkdown(report: ScanReport): string {
   return lines.join("\n");
 }
 
+export function renderSarif(report: ScanReport): string {
+  const rules = report.rules.map((rule) => ({
+    id: rule.id,
+    name: rule.title.replace(/[^A-Za-z0-9]+/g, ""),
+    shortDescription: { text: rule.title },
+    help: { text: rule.recommendation ?? rule.evidence },
+    properties: { weight: rule.weight },
+  }));
+  const results = report.rules
+    .filter((rule) => rule.status !== "pass")
+    .map((rule) => ({
+      ruleId: rule.id,
+      level: rule.status === "fail" ? "error" : "warning",
+      message: { text: rule.recommendation ? `${rule.evidence}. ${rule.recommendation}` : rule.evidence },
+    }));
+  return `${JSON.stringify({
+    $schema: "https://json.schemastore.org/sarif-2.1.0.json",
+    version: "2.1.0",
+    runs: [{
+      tool: { driver: { name: "RepoCare", version: report.toolVersion, informationUri: "https://github.com/lstsavr/repocare", rules } },
+      results,
+      properties: { score: report.score, grade: report.grade, ignoredRules: report.ignoredRules },
+    }],
+  }, null, 2)}\n`;
+}
+
 export function renderReport(report: ScanReport, format: OutputFormat): string {
   if (format === "json") return `${JSON.stringify(report, null, 2)}\n`;
+  if (format === "sarif") return renderSarif(report);
   if (format === "markdown") return renderMarkdown(report);
   return renderText(report);
 }
