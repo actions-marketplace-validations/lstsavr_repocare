@@ -15,7 +15,7 @@
   "scripts": {
     "build": "tsc -p tsconfig.json",
     "check": "tsc -p tsconfig.json --noEmit",
-    "test": "npm run build && node --test --experimental-test-isolation=none dist/tests/*.test.js",
+    "test": "npm run build && node --test dist/tests/*.test.js",
     "scan:self": "npm run build && node dist/src/cli.js scan . --format markdown",
     "prepack": "npm test"
   },
